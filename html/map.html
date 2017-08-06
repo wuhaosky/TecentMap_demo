@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <title>地图</title>
+    <meta name="description" content=""/>
+    <meta name="format-detection" content="telephone=no">
+    <meta name="format-detection" content="email=no"/>
+    <link rel="stylesheet" type="text/css" href="./static/map.css" />
+    <script charset="utf-8" src="http://map.qq.com/api/js?v=2.exp&key=YSPBZ-FEM6P-FXZDL-VH3G6-EMXK5-C2F7J"></script>
+    <script type="text/javascript" src="https://3gimg.qq.com/lightmap/components/geolocation/geolocation.min.js"></script>    
+    <style>
+        html, body{
+            width: 100%;
+            height: 100%;
+        }
+        #loading {
+            display: block;
+            background: #fff;
+            z-index: 999;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #loading img {
+            animation-duration: 1s; 
+            animation-name: common-widget-loading;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            -webkit-animation-duration: 1s;
+            -webkit-animation-name: common-widget-loading;
+            -webkit-animation-iteration-count: infinite; 
+        }
+        #loading .loading-img{
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            margin-top: -20px;
+            margin-left: -20px;
+        }
+        @keyframes common-widget-loading {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+            to {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+        @-webkit-keyframes common-widget-loading {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+            to {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+        #container{
+            position: fixed !important;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<!--loading  -->
+<div id="loading" >
+    <img class="loading-img" src="https://p1.meituan.net/education/858a6e254447a75fbe51ccf88611c653583.png" width="40" height="40" alt="loading">
+</div>
+<div id="app"></div>
+<div id="container"></div>
+    <div id="pos-area">
+        <p id="demo">点击下面的按钮，获得对应信息：<br /></p>
+    </div>
+ 
+    <div id="btn-area">
+        <button onClick="geolocation.getLocation(showPosition, showErr, options)">获取精确定位信息</button>
+        <button onClick="geolocation.getIpLocation(showPosition, showErr)">获取粗糙定位信息</button>
+        <button onClick="showWatchPosition()">开始监听位置</button>
+        <button onClick="showClearWatch()">停止监听位置</button>
+    </div>
+
+<script type="text/javascript">
+
+var map = new qq.maps.Map(document.getElementById("container"), {
+    // 地图的中心地理坐标。
+    center: new qq.maps.LatLng(31.216579,121.420914),
+    zoom: 17
+});
+// 自定义控件
+var zoomLevelControl = new qq.maps.Control(
+    {
+        content: '缩放级别:' + map.getZoom(),
+        align: qq.maps.ALIGN.TOP,
+        map: map
+    }
+);
+function update() {
+    var currentZoom = map.getZoom();
+    console.log(currentZoom)
+    qq.maps.event.trigger(zoomLevelControl, "resize");
+}
+//添加dom监听事件  一旦zoom的缩放级别放生变化则出发update函数
+qq.maps.event.addDomListener(map, "zoom_changed", update);
+
+// 标注
+var marker = new qq.maps.Marker({
+    position: new qq.maps.LatLng(31.216579,121.420914),
+    map: map
+});
+// 自定义标注图标
+var size = new qq.maps.Size(40, 40),
+    origin = new qq.maps.Point(0, 0),
+    markerIcon = new qq.maps.MarkerImage(
+        "https://p1.meituan.net/dpnewvc/4f8abed20ec6555d1ccc433ed36028391382.png",
+        size, 
+        origin
+    );
+   marker.setIcon(markerIcon);
+
+var marker2 = new qq.maps.Marker({
+    position: new qq.maps.LatLng(31.21429,121.420914),
+    map: map
+});
+
+var marker3 = new qq.maps.Marker({
+    position: new qq.maps.LatLng(31.21329,121.420914),
+    map: map
+});
+
+//添加信息窗口
+var info = new qq.maps.InfoWindow({
+    map: map
+});
+qq.maps.event.addListener(marker, 'click', function() {
+    info.open(); 
+    info.setContent('<div style="text-align:center;white-space:nowrap;">单击标记</div>');
+    info.setPosition(new qq.maps.LatLng(31.216579,121.420914)); 
+});
+
+// 添加文本标注 
+var label = new qq.maps.Label({
+    position: new qq.maps.LatLng(31.216579,121.420914),
+    map: map,
+    content:'文本标注'
+});
+
+
+
+var geolocation = new qq.maps.Geolocation("YSPBZ-FEM6P-FXZDL-VH3G6-EMXK5-C2F7J", "时趣");
+
+document.getElementById("pos-area").style.height = (document.body.clientHeight - 110) + 'px';
+
+var positionNum = 0;
+var options = {timeout: 8000};
+function showPosition(position) {
+    positionNum ++;
+    document.getElementById("demo").innerHTML += "序号：" + positionNum;
+    document.getElementById("demo").appendChild(document.createElement('pre')).innerHTML = JSON.stringify(position, null, 4);
+    document.getElementById("pos-area").scrollTop = document.getElementById("pos-area").scrollHeight;
+};
+
+function showErr() {
+    positionNum ++;
+    document.getElementById("demo").innerHTML += "序号：" + positionNum;
+    document.getElementById("demo").appendChild(document.createElement('p')).innerHTML = "定位失败！";
+    document.getElementById("pos-area").scrollTop = document.getElementById("pos-area").scrollHeight;
+};
+
+function showWatchPosition() {
+    document.getElementById("demo").innerHTML += "开始监听位置！<br /><br />";
+    geolocation.watchPosition(showPosition);
+    document.getElementById("pos-area").scrollTop = document.getElementById("pos-area").scrollHeight;
+};
+
+function showClearWatch() {
+    geolocation.clearWatch();
+    document.getElementById("demo").innerHTML += "停止监听位置！<br /><br />";
+    document.getElementById("pos-area").scrollTop = document.getElementById("pos-area").scrollHeight;
+};
+
+</script>
+
+<script type="text/javascript" src="./static/map.js"></script>
+
+</body>
+</html>
