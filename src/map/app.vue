@@ -23,35 +23,21 @@ export default {
     },
     data() {
         return {
-            map: null,
-            markerData: [
-                [31.290679, 121.420914],
-                [31.281779, 121.421914],
-                [31.272879, 121.422914],
-                [31.263979, 121.423914],
-                [31.211579, 121.424914],
-                [31.215479, 121.425914],
-                [31.216379, 121.426914],
-                [31.217279, 121.427914],
-                [31.218179, 121.428914],
-                [31.219079, 121.429914]
-                // [31.216579, 121.420914],
-                // [31.216679, 121.420914],
-                // [31.216779, 121.420914],
-                // [31.216879, 121.420914],
-                // [31.216879, 121.420914],
-                // [31.216729, 121.420914],
-                // [31.216539, 121.420914],
-                // [31.216649, 121.420914],
-                // [31.216559, 121.420914],
-                // [31.216169, 121.420914]
-            ]
+            map: null
         }
     },
     computed: {
-
+        markerData(){
+            let markerData = [];
+            if (this.$store.state.ajaxData && this.$store.state.ajaxData.length) {
+                markerData = this.$store.state.ajaxData;
+            }
+            return markerData;
+        }
     },
     mounted() {
+        // 定位当前位置
+        this.onGeoLocationBtnClick();
         // 异步获取网络数据
         this.$store.dispatch('fetchData');
 
@@ -75,37 +61,6 @@ export default {
             console.log(map.getCenter());
         });
 
-        // 覆盖物
-        var marker = new qq.maps.Marker({
-            position: new qq.maps.LatLng(31.214579,121.420914),
-            map: map
-        });
-        // 自定义覆盖物图标
-        var size = new qq.maps.Size(40, 40),
-            origin = new qq.maps.Point(0, 0),
-            markerIcon = new qq.maps.MarkerImage(
-                "https://p1.meituan.net/dpnewvc/4f8abed20ec6555d1ccc433ed36028391382.png",
-                size, 
-                origin
-            );
-        marker.setIcon(markerIcon);
-
-        //添加信息窗口
-        // var info = new qq.maps.InfoWindow({
-        //     map: map
-        // });
-        // qq.maps.event.addListener(marker, 'click', function() {
-        //     info.open(); 
-        //     info.setContent('<div style="text-align:center;white-space:nowrap;">单击标记</div>');
-        //     info.setPosition(new qq.maps.LatLng(31.216579,121.420914)); 
-        // });
-
-        // 添加文本标注 
-        // var label = new qq.maps.Label({
-        //     position: new qq.maps.LatLng(31.216579,121.420914),
-        //     map: map,
-        //     content:'文本标注'
-        // });
         this.map = map;
         this.createCluster();
     },
@@ -122,27 +77,16 @@ export default {
                     animation:qq.maps.MarkerAnimation.DROP
                 });
                 // 自定义覆盖物图标
-                var size = new qq.maps.Size(35, 35),
+                var size = new qq.maps.Size(20, 20),
                     origin = new qq.maps.Point(0, 0),
                     markerIcon = new qq.maps.MarkerImage(
-                        "https://p1.meituan.net/education/60e4d8ca130fbad7a6e34b1909fe10921520.png",
+                        "https://p1.meituan.net/education/015a669771407537bacd5fb55aac7a0a1580.png",
                         size, 
-                        origin
+                        origin,
+                        new qq.maps.Point(10, 0),
+                        new qq.maps.Size(20, 20)
                     );
                 marker.setIcon(markerIcon);
-                // 添加文本标注 
-                var label = new qq.maps.Label({
-                    position: new qq.maps.LatLng(position.lat, position.lng),
-                    map: self.map,
-                    offset: new qq.maps.Size(-35, 0),
-                    style: {
-                        color: "#f00",
-                        fontSize: "16px",
-                        fontWeight: "bold"
-                    },
-                    content:'我的位置'
-                });
-                
             };
             function showErr() {
             };
@@ -172,13 +116,43 @@ export default {
             var MarkerDecoration = qq.maps.MarkerDecoration;
             var markers = new MVCArray();
             var markerCluster;
+            
             for (var i = 0; i < this.markerData.length; i++) {
-                var latLng = new LatLng(this.markerData[i][0], this.markerData[i][1]);
-                var decoration = new MarkerDecoration(i, new Point(0, -5));
+                var latLng = new LatLng(this.markerData[i].lat, this.markerData[i].lng);
                 var marker = new Marker({
                     'position': latLng,
                     map: this.map,
                     markerId: i //给覆盖物设置唯一标识
+                });
+                // 自定义覆盖物图标
+                var markerIcon = new qq.maps.MarkerImage(
+                        this.categoryIcon(this.markerData[i].category),
+                        new Size(26, 30),
+                        new qq.maps.Point(0, 0),
+                        new qq.maps.Point(13, 0),
+                        new qq.maps.Size(26, 30)
+                    );
+                marker.setIcon(markerIcon);
+                // 添加文本标注 
+                var label = new qq.maps.Label({
+                    position: new qq.maps.LatLng(this.markerData[i].lat, this.markerData[i].lng),
+                    map: this.map,
+                    offset: new qq.maps.Size(-42, 33),
+                    style: {
+                        color: "#333",
+                        fontSize: "12px",
+                        lineHeight: "14px",
+                        border: "1px #d7d7d7 solid",
+                        borderRadius: "20px",
+                        padding: "0px 5px",
+                        textAlign: "center",
+                        width: "74px",
+                        whiteSpace: "nowrap",
+                        wordWrap: "normal",
+                        textOverflow: "ellipsis",
+                        overflow: "hidden"
+                    },
+                    content:'' + this.markerData[i].shopName
                 });
                 markers.push(marker);
                 Event.addListener(marker, 'click', function(e) {
@@ -195,6 +169,16 @@ export default {
                 gridSize: 30, //默认60
                 averageCenter: true, //默认false
                 maxZoom: 18, //默认18
+                styles: [{
+                            icon: new MarkerImage(
+                                "https://p1.meituan.net/education/62dd3c033c9e53ea4c5ed4726f371da71591.png", 
+                                new Size(36, 36),
+                                new qq.maps.Point(0, 0),
+                                new qq.maps.Point(18, 0),
+                                new qq.maps.Size(36, 36)
+                            ),
+                            text: new MarkerDecoration('<div style="color:#fff;font-size:12px;font-weight:bold;line-height:14px;">{num}</div>', new Point(0, 0))
+                        }]
             });
     
             // 聚合覆盖物的点击事件
@@ -202,6 +186,23 @@ export default {
                 console.log('点击了聚合点');
                 console.log(evt);
             });
+        },
+        categoryIcon(category){
+            let icon = "";
+            switch (category) {
+                case "ktv":
+                    icon = "https://p0.meituan.net/education/c0c61acf8208ceb8ec31c4c21656a65f2521.png";
+                    break;
+                case "education":
+                    icon = "https://p0.meituan.net/education/7ab2bd8d44fb4b51455013143e504da62123.png";
+                    break;
+                case "eat":
+                    icon = "https://p1.meituan.net/education/eab18254262ce1913cc884004df5d2732313.png";
+                    break;
+                default:
+                    break;
+            }
+            return icon;
         }
     },
 
